@@ -1,0 +1,34 @@
+###################################################################################################
+# Global
+###################################################################################################
+global:
+  name: prod-kcl-01-api
+  namespace: api
+  bluegreen: false
+
+base:
+  ###################
+  # Deployment
+  ###################
+  rollouts:
+    replicaCount: 3
+    image:
+      repository: 0123456789.dkr.ecr.ap-northeast-2.amazonaws.com/kcl-01
+      tag: 1234567890
+    java_tool_options:
+      springProfile: prod
+      vpc: kcl-01
+  ############################################################################################  #######
+  # Ingress
+  ############################################################################################  #######
+  ingress:
+    exist: true
+    name: ingress-prod-kcl-01-api-internal
+    annotation:
+      domains:
+        - '"kcl-01.site"'
+        - '"kcl-01.site.internal"'
+      securityGroups: prod-kcl-01-alb-internal-security-groups
+      subnets:
+        - subnet-1234567890
+        - subnet-0987654321

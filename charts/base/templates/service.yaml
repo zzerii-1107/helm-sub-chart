@@ -1,0 +1,21 @@
+{{- $root := . -}}
+{{- $service := .Values.service -}}
+{{- range $canary := .Values.service.canaryStrategy }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $canary }}
+  namespace: {{ $root.Values.global.namespace }}
+  annotations:
+    {{- include "service.annotations" $root | indent 4 }}
+spec:
+  selector:
+    {{- include "deployment.selectorLabels" $root | indent 4 }}
+  type: {{ $service.type }}
+  ports:
+  - name: {{ $service.name }}
+    protocol: {{ $service.protocol }}
+    port: {{ $service.port }}
+    targetPort: {{ $service.targetPort }}
+{{- end }}

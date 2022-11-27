@@ -1,0 +1,21 @@
+{{- if eq .Values.externalIngress.exist true }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.externalIngress.name }}
+  namespace : {{ .Values.global.namespace }}
+  annotations:
+  {{- include "externalIngress.annotations" . | indent 4 }}
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.service.canaryStrategy.root }}
+                port:
+                  name: use-annotation
+{{- end }}

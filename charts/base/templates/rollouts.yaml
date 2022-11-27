@@ -1,0 +1,61 @@
+{{- if .Values.rollouts }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata: 
+  name: {{ .Values.global.name }}
+  namespace: {{ .Values.global.namespace }}
+spec:
+  replicas: {{ .Values.rollouts.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "deployment.selectorLabels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "deployment.selectorLabels" . | indent 8 }}
+    spec:
+      volumes:                                  
+      - name: tz-config
+        hostPath:                             
+          path: /usr/share/zoneinfo/Asia/Seoul
+          type: ''
+      dnsPolicy: Default
+      {{- if .Values.rollouts.imagePullSecrets }}
+      imagePullSecrets:
+      - name: {{ .Values.rollouts.imagePullSecrets.name }}
+      {{- end }}
+      containers:
+      - image: {{ .Values.rollouts.image.repository }}:{{ .Values.rollouts.image.tag }}
+        name: {{ .Values.global.name }}
+        imagePullPolicy: {{ .Values.rollouts.image.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.rollouts.image.containerPort }}
+        env:
+        {{- if eq .Values.rollouts.java_env true }}
+        {{- include "env.java.tool.options" . | indent 8 }}
+        {{- else }}
+        {{- range $key, $val := .Values.rollouts.env }}
+          - name: {{ $key | upper }}
+            value: {{ $val }}
+        {{- end }}
+        {{- end }}
+        volumeMounts:
+          - name: tz-config
+            mountPath: /etc/localtime
+        {{- if .Values.rollouts.command }}
+        command:
+        {{- toYaml .Values.rollouts.command | nindent 10 }}
+        {{- end }}
+  strategy:
+    canary:
+      canaryService: {{ .Values.service.canaryStrategy.canary }}
+      stableService: {{ .Values.service.canaryStrategy.stable }}
+      trafficRouting:
+        alb:
+          ingress: {{ .Values.ingress.name }}
+          rootService: {{ .Values.service.canaryStrategy.root }}
+          servicePort: {{ .Values.service.port }}
+      steps:
+        {{- include "rollouts.steps" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,72 @@
+default:
+  image:
+    name: 0123456789.dkr.ecr.ap-northeast-2.amazonaws.com/helm-package:latest
+    entrypoint:
+      - '/usr/bin/env'
+      - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
+variables:
+  CHART_NAME    : "base"
+  CHART_VERSION : "0.0.8"
+  PROJECT_ID    : ${CI_PROJECT_ID}
+  CHANNEL       : "devel"
+
+stages:
+  - validate
+  - plan
+  - package
+  - upload
+
+.validate:
+  stage: validate
+  script:
+    - helm lint ./charts/base
+  allow_failure: false
+  only:
+    refs:
+      - main
+  tags:
+    - docker
+
+.plan:
+  stage: plan
+  script:
+    - helm template ./charts/base
+  allow_failure: false
+  only:
+    refs:
+      - main
+  tags:
+    - docker
+
+.package:
+  stage: package
+  script:
+    - helm package ./charts/base
+    - helm repo index ./charts/base
+  artifacts:
+    paths:
+      - ./${CHART_NAME}-${CHART_VERSION}.tgz
+      - ./charts/base/index.yaml
+  # when: manual
+  allow_failure: false
+  only:
+    refs:
+      - main
+  tags:
+    - docker
+  
+.upload:
+  stage: upload
+  script:
+    - helm repo add --username kcl --password ${MY_ACCESS_TOKEN} ${CHART_NAME}-${CHART_VERSION} https://${GITLAB_URL}/api/v4/projects/${PROJECT_ID}/packages/helm/${CHANNEL}
+    - helm cm-push ${CHART_NAME}-${CHART_VERSION}.tgz ${CHART_NAME}-${CHART_VERSION} 
+    # - curl --request POST --form 'chart=${CHART_NAME}-${CHART_VERSION}.tgz' --user kcl:${MY_ACCESS_TOKEN} "https://${GITLAB_URL}/k8s/${CHART_NAME}"
+    # - curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@${CHART_NAME}-${CHART_VERSION}.tgz" "https://${GITLAB_URL}/k8s/${CHART_NAME}"
+  when: manual
+  allow_failure: false
+  only:
+    refs:
+      - main
+  tags:
+    - docker

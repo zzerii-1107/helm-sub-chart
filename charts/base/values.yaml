@@ -1,0 +1,78 @@
+###################################################################################################
+# Global
+###################################################################################################
+global:
+  name: base-chart
+  namespace: default
+  bluegreen: true
+
+###################################################################################################
+# env.open
+###################################################################################################
+env:
+  open:
+    # disable all routes prefixed with /api
+    DISABLE_API: false
+###################
+# Deployment
+###################
+rollouts:
+  replicaCount: 3
+  image:
+    repository: 0123456789.dkr.ecr.ap-northeast-2.amazonaws.com/abc
+    tag: latest
+    imagePullPolicy: Always
+    containerPort: 8080
+  java_env: true
+  java_tool_options:
+    springProfile: ex) dev,test,prod
+    vpc: ex) kcl01,kcl02 ...
+    elastic_apm_agent: /elastic-apm-agent-1.32.0.jar
+    elastic_apm_server:
+      prod: http://internal-kcl-alb-123456789.ap-northeast-2.elb.amazonaws.com
+      test: http://1.2.3.4:1234
+      dev: http://5.6.7.8:5678
+  env: 
+    # enter your env on key: value format  ex) sprig_profile: prod
+###############
+# Service
+###############
+service:
+  canaryStrategy:
+    root: rollout-root-svc
+    canary: rollout-canary-svc
+    stable: rollout-stable-svc
+  healthCheck: /aws/health
+  type: ClusterIP
+  name: http
+  protocol: TCP
+  port: 8080
+  targetPort: 8080
+
+###################################################################################################
+# Ingress
+###################################################################################################
+ingress:
+  exist: false
+  name: default-ingress-name
+  annotation:
+    domains:
+      - '"first domain"'
+      - '"second domain"'
+    securityGroups: default-security-group
+    subnets:
+      - first subnet
+      - second subnet
+
+###################################################################################################
+# externalIngress
+###################################################################################################
+externalIngress:
+  exist: false
+  name: default-ingress-name
+  annotation:
+    cert: "cert arn"
+    securityGroups: default-security-group
+    subnets:
+      - first subnet
+      - second subnet

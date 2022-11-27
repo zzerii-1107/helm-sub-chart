@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kcl-api-application-set
+spec:
+  generators:
+  - list:
+      elements:
+      - prefix: 'prod'
+        name: 'kcl-01'
+        url: 'https://ABCDEFGHIJKLMN12345678.yl4.ap-northeast-2.eks.amazonaws.com'
+        namespace: 'api'
+        targetRevision: 'main'
+      - prefix: 'prod'
+        name: 'kcl-02'
+        url: 'https://QWER1234567890QWER.yl4.ap-northeast-2.eks.amazonaws.com'
+        namespace: 'api'
+        targetRevision: 'main'
+        :
+        :
+  template:
+    metadata:
+      name: '{{prefix}}-{{name}}-api'
+    spec:
+      project: kcl
+      source:
+        path: charts/kcl/{{name}}
+        repoURL: 'https://github.com/helm-charts.git'
+        targetRevision: '{{targetRevision}}'
+        helm:
+          valueFiles:
+            - values-{{prefix}}.yaml
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+      destination:
+        server: '{{url}}'
+        namespace: '{{namespace}}'

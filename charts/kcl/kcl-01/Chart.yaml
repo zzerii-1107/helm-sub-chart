@@ -1,0 +1,10 @@
+apiVersion: v2
+name: kcl-01-api
+description: A Helm chart for k8s kcl-01-api
+type: application
+version: 0.1.1
+appVersion: "1.16.0"
+dependencies:
+  - name: base
+    version: 0.0.8
+    repository: "@base"

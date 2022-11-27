@@ -1,0 +1,48 @@
+###################################################################################################
+# Global
+###################################################################################################
+global:
+  name: prod-kcl-02-api
+  namespace: kcl-02
+  bluegreen: false
+
+base:
+  ###############
+  # Service
+  ###############
+  service:
+    port: 80
+    targetPort: 3000
+  ###################
+  # Deployment
+  ###################
+  rollouts:
+    replicaCount: 2
+    image:
+      repository: registry.github.com/front-end/kcl-02
+      tag: "0123456789"
+      containerPort: 3000
+    java_env: false
+    imagePullSecrets:
+      name: image-pull-secret
+    command:
+      - sh
+      - -c
+      - run.sh
+    env:
+      next_public_env: prod
+      next_public_target: private
+  ###################################################################################################
+  # externalIngress
+  ###################################################################################################
+  ingress:
+    name: ingress-prod-kcl-02
+  externalIngress:
+    exist: true
+    name: ingress-prod-kcl-02
+    annotation:
+      cert: arn:aws:acm:ap-northeast-2:0123456789:certificate/abcdefg1234567890
+      securityGroups: prod-kcl-02-alb-security-groups
+      subnets:
+        - subnet-1234567890
+        - subnet-0987654321
